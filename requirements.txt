@@ -1,0 +1,6 @@
+easyocr
+requests
+scikit-image
+numpy
+prettytable
+shutil

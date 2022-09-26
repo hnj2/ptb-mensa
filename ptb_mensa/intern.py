@@ -60,7 +60,7 @@ def get_border_color_row_col_counts(image):
   return border.sum(axis=1), border.sum(axis=0)
 
 def get_row_col_midpoints(arr):
-  thresh = (arr.max()*9 + arr.min()) / 10
+  thresh = (arr.max()*85 + arr.min()*15) / 100
   barr = arr > thresh
 
   result = []

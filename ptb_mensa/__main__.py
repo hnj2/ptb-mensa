@@ -26,12 +26,12 @@ def get_terminal_width():
   return shutil.get_terminal_size((400, 20))[0]
 
 def add_today_column(table, name, menu):
-  table.add_column(name, [menu.description, menu.price, menu.extra])
+  table.add_column(name, [menu.description, menu.extra, menu.price[0], menu.price [1]])
 
 def print_today():
   table = PrettyTable(title=f"PTB Mensa Menu {ptb_mensa.date()}")
   menu = ptb_mensa.menu()
-  table.add_column("", ["Menu", "Preis", "Extra"], align="r")
+  table.add_column("", ["Menu", "Extra", "Preis (intern)", "Preis (extern)"], align="r")
   add_today_column(table, "Vegan", menu.vegan)
   add_today_column(table, "Vegetarisch", menu.veggi)
   add_today_column(table, "Fleisch", menu.meat)
@@ -45,10 +45,12 @@ def print_today():
 
 def add_week_column(table, name, menus):
 
-  column = [menus[0].description, menus[0].price, menus[0].extra]
+  column = [menus[0].description, menus[0].extra]
   for menu in menus[1:]:
-    column += ["-"*30, menu.description, menu.price, menu.extra]
-  
+    column += ["-"*30, menu.description, menu.extra]
+
+  column += ["-"*30, menus[0].price[0], menus[0].price[1]]
+
   table.add_column(name, column)
 
 def print_week():
@@ -58,7 +60,9 @@ def print_week():
 
   head_col = [days[0], "", ""]
   for day in days[1:]:
-    head_col += ["", day, "", ""]
+    head_col += [day, "", ""]
+
+  head_col += ["Peris (intern)","Preis (extern)"]
 
   table.add_column("", head_col, align="r")
   add_week_column(table, "Vegan", list(map(lambda m: m.vegan, menu)))

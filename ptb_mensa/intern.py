@@ -19,7 +19,7 @@ import io
 import sys
 from contextlib import redirect_stderr
 from dataclasses import dataclass
-from typing import Union,Dict
+from typing import Union,Dict,Tuple
 from datetime import datetime
 
 import requests
@@ -89,7 +89,6 @@ def get_menu_tiles():
     for (c_s, c_e) in zip(cols[:-1], cols[1:]):
       results_col.append(img.crop((c_s, r_s, c_e, r_e)))
     results.append(results_col)
-  
   return results
 
 # parsing images to text
@@ -115,39 +114,36 @@ def img_to_text(img):
       result += " " + text
   return result
 
+def img_to_menu_prices(img):
+  texts = ocr(img)
+  if len(texts) == 0:
+      return (None, None)
+  texts.sort(key=lambda t: t[0][0][1])
+
+  return texts[0][1], texts[1][1]
+
+
 def img_to_menu_attributes(img):
   texts = ocr(img)
-
+  if len(texts) == 0:
+      return ""
   texts.sort(key=lambda t: t[0][0][0])
 
-  sepa = 10
-  thresh = sepa
-  pos = 0
-
   first = None
-  while texts[pos][0][0][0] < thresh:
+  for t in texts:
     if first:
-      first += " " + texts[pos][1]
+      first += " " + t[1]
     else:
-      first = texts[pos][1]
-    thresh = texts[pos][0][1][0] + sepa
-    pos += 1
-  
-  second = None
-  for t in texts[pos:]:
-    if second:
-      second += " " + t[1]
-    else:
-      second = t[1]
+      first = t[1]
 
-  return first, second
+  return first
 
 # creating the menu structure
 
 @dataclass
 class Menu:
   description : str
-  price : str
+  price : Tuple[str, str]
   extra : str
 
 @dataclass
@@ -157,30 +153,29 @@ class DayMenu:
   meat : Menu
   soup : Menu
 
-def get_day_menus(description_images, attribute_images):
+def get_day_menus(description_images, attribute_images, price_images):
   descriptions = list(map(img_to_text, description_images))
-  attributes = list(map(img_to_menu_attributes, attribute_images))
+  prices = list(map(img_to_menu_prices, price_images))
+  extras = list(map(img_to_menu_attributes, attribute_images))
   return DayMenu(*[
-    Menu(descriptions[i], attributes[i][1], attributes[i][0])
+    Menu(descriptions[i], prices[i], extras[i])
     for i in range(4)
   ])
 
 def get_week_menus():
   tiles_img = get_menu_tiles()
-  assert len(tiles_img) % 2 == 1
+  assert len(tiles_img) % 2 == 0
 
   #menu_names = list(map(img_to_text, tiles_img[0][1:]))
 
   results = list()
   dates = list()
-
-  for start in range(1, len(tiles_img), 2):
+  for start in range(1, len(tiles_img)-1, 2):
     first_line = tiles_img[start]
     second_line = tiles_img[start+1]
-
     date = img_to_text(first_line[0])
 
-    day_menus = get_day_menus(tiles_img[start][1:], tiles_img[start+1][1:])
+    day_menus = get_day_menus(tiles_img[start][1:], tiles_img[start+1][1:], tiles_img[-1][1:])
 
     results.append(day_menus)
     dates.append(date)
